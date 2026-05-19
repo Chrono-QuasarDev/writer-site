@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment variables — never commit real secrets
+.env
+
+# SQLite database file — contains real data
+database.db
+
+# Uploaded files
+public/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
