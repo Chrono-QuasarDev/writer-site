@@ -1,0 +1,57 @@
+<%- include('partials/header') %>
+
+<a href="/" class="back-link">← Back to Library</a>
+
+<article class="book-detail">
+  <header class="book-detail__header">
+    <div class="book-detail__cover">
+      <% if (book.cover_image) { %>
+        <img
+          src="/uploads/<%= book.cover_image %>"
+          alt="Cover of <%= book.title %>"
+        />
+      <% } else { %>
+        <div class="book-detail__cover-placeholder" aria-hidden="true">
+          <span><%= book.title.charAt(0).toUpperCase() %></span>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="book-detail__intro">
+      <h1 class="book-detail__title"><%= book.title %></h1>
+      <% if (book.description) { %>
+        <p class="book-detail__description"><%= book.description %></p>
+      <% } %>
+      <p class="book-detail__meta">
+        <%= chapters.length %>
+        <%= chapters.length === 1 ? 'chapter' : 'chapters' %> available
+      </p>
+    </div>
+  </header>
+
+  <section class="book-detail__chapters">
+    <h2 class="book-detail__section-title">Chapters</h2>
+
+    <% if (chapters.length === 0) { %>
+      <div class="empty-state">
+        <p>No chapters available.</p>
+        <p class="empty-state__hint">Check back soon.</p>
+      </div>
+    <% } else { %>
+      <ol class="chapter-list">
+        <% chapters.forEach(chapter => { %>
+          <li class="chapter-list__item">
+            <a href="/chapters/<%= chapter.id %>" class="chapter-list__link">
+              <span class="chapter-list__number">
+                Chapter <%= chapter.chapter_number %>
+              </span>
+              <span class="chapter-list__title"><%= chapter.title %></span>
+            </a>
+          </li>
+        <% }) %>
+      </ol>
+    <% } %>
+  </section>
+</article>
+
+<%- include('partials/footer') %>
