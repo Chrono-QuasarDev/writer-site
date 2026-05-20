@@ -1,0 +1,54 @@
+<%- include('partials/header') %>
+
+<nav class="reader-crumb">
+  <a href="/books/<%= book.id %>" class="reader-crumb__link">
+    ← Back to <%= book.title %>
+  </a>
+</nav>
+
+<article class="reader">
+  <header class="reader__header">
+    <p class="reader__eyebrow">
+      <a href="/books/<%= book.id %>" class="reader__book-link">
+        <%= book.title %>
+      </a>
+      <span class="reader__sep">·</span>
+      Chapter <%= chapter.chapter_number %>
+    </p>
+    <h1 class="reader__title"><%= chapter.title %></h1>
+  </header>
+
+  <div class="reader__content">
+    <% if (chapter.content && chapter.content.trim().length > 0) { %>
+      <%= chapter.content %>
+    <% } else { %>
+      <p class="reader__empty">This chapter has no content yet.</p>
+    <% } %>
+  </div>
+
+  <nav class="reader-nav" aria-label="Chapter navigation">
+    <div class="reader-nav__slot reader-nav__slot--prev">
+      <% if (prevChapter) { %>
+        <a href="/chapters/<%= prevChapter.id %>" class="reader-nav__link">
+          <span class="reader-nav__direction">← Previous</span>
+          <span class="reader-nav__chapter-title">
+            Chapter <%= prevChapter.chapter_number %>: <%= prevChapter.title %>
+          </span>
+        </a>
+      <% } %>
+    </div>
+
+    <div class="reader-nav__slot reader-nav__slot--next">
+      <% if (nextChapter) { %>
+        <a href="/chapters/<%= nextChapter.id %>" class="reader-nav__link reader-nav__link--next">
+          <span class="reader-nav__direction">Next →</span>
+          <span class="reader-nav__chapter-title">
+            Chapter <%= nextChapter.chapter_number %>: <%= nextChapter.title %>
+          </span>
+        </a>
+      <% } %>
+    </div>
+  </nav>
+</article>
+
+<%- include('partials/footer') %>
