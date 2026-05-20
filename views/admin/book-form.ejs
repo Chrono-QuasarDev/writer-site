@@ -1,0 +1,90 @@
+<%- include('../partials/header') %>
+<%- include('../partials/flash') %>
+
+<a href="/admin/dashboard" class="back-link">← Back to Dashboard</a>
+
+<section class="form-page">
+  <h1 class="form-page__title">
+    <%= mode === 'edit' ? 'Edit Book' : 'Add Book' %>
+  </h1>
+
+  <% if (errors && errors.length) { %>
+    <div class="form-errors" role="alert">
+      <p class="form-errors__heading">Please fix the following:</p>
+      <ul>
+        <% errors.forEach(err => { %>
+          <li><%= err %></li>
+        <% }) %>
+      </ul>
+    </div>
+  <% } %>
+
+  <form
+    class="book-form"
+    method="POST"
+    action="<%= mode === 'edit' ? '/admin/books/' + book.id + '/edit' : '/admin/books/new' %>"
+    enctype="multipart/form-data"
+  >
+    <div class="form-field">
+      <label class="form-field__label" for="title">Title</label>
+      <input
+        class="form-field__input"
+        type="text"
+        id="title"
+        name="title"
+        maxlength="200"
+        required
+        value="<%= book.title || '' %>"
+      />
+    </div>
+
+    <div class="form-field">
+      <label class="form-field__label" for="description">Description</label>
+      <textarea
+        class="form-field__input form-field__input--textarea"
+        id="description"
+        name="description"
+        rows="6"
+        maxlength="5000"
+      ><%= book.description || '' %></textarea>
+      <p class="form-field__hint">Optional. Up to 5,000 characters.</p>
+    </div>
+
+    <div class="form-field">
+      <label class="form-field__label" for="cover">Cover image</label>
+
+      <% if (book.cover_image) { %>
+        <div class="book-form__current-cover">
+          <img src="/uploads/<%= book.cover_image %>" alt="Current cover" />
+          <label class="book-form__remove-cover">
+            <input type="checkbox" name="remove_cover" value="1" />
+            Remove current cover
+          </label>
+        </div>
+      <% } %>
+
+      <input
+        class="form-field__input form-field__input--file"
+        type="file"
+        id="cover"
+        name="cover"
+        accept="image/jpeg,image/png,image/webp"
+      />
+      <p class="form-field__hint">
+        Optional. JPG, PNG, or WebP. Max 2 MB. Will be resized and converted to WebP.
+        <% if (book.cover_image) { %>
+          Uploading a new file replaces the current one.
+        <% } %>
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">
+        <%= mode === 'edit' ? 'Save changes' : 'Create book' %>
+      </button>
+      <a href="/admin/dashboard" class="btn btn--ghost">Cancel</a>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/footer') %>

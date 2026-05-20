@@ -1,0 +1,46 @@
+<%- include('../partials/header') %>
+<%- include('../partials/flash') %>
+
+<a href="/admin/dashboard" class="back-link">← Back to Dashboard</a>
+
+<section class="form-page">
+  <h1 class="form-page__title">Delete this book?</h1>
+
+  <div class="confirm-card">
+    <div class="confirm-card__cover">
+      <% if (book.cover_image) { %>
+        <img src="/uploads/<%= book.cover_image %>" alt="Cover of <%= book.title %>" />
+      <% } else { %>
+        <div class="confirm-card__cover-placeholder" aria-hidden="true">
+          <span><%= book.title.charAt(0).toUpperCase() %></span>
+        </div>
+      <% } %>
+    </div>
+    <div class="confirm-card__body">
+      <h2 class="confirm-card__title"><%= book.title %></h2>
+      <p class="confirm-card__meta">
+        <%= book.chapter_count %>
+        <%= book.chapter_count === 1 ? 'chapter' : 'chapters' %>
+        will also be deleted.
+      </p>
+    </div>
+  </div>
+
+  <p class="form-page__warning">
+    <strong>This cannot be undone.</strong> All chapters and the cover image
+    will be permanently removed.
+  </p>
+
+  <form
+    class="form-actions"
+    method="POST"
+    action="/admin/books/<%= book.id %>/delete"
+  >
+    <button type="submit" class="btn btn--primary btn--danger">
+      Yes, delete this book
+    </button>
+    <a href="/admin/dashboard" class="btn btn--ghost">Cancel</a>
+  </form>
+</section>
+
+<%- include('../partials/footer') %>

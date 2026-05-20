@@ -161,17 +161,6 @@ const adminController = {
       res.redirect('/');
     });
   },
-
-  /**
-   * GET /admin/dashboard
-   * Placeholder until the real dashboard phase lands.
-   * Confirms auth is actually working.
-   */
-  showDashboard: (req, res) => {
-    res.render('admin/dashboard', {
-      title: 'Dashboard',
-    });
-  },
 };
 
 module.exports = adminController;

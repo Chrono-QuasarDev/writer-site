@@ -1,19 +1,51 @@
 <%- include('../partials/header') %>
+<%- include('../partials/flash') %>
 
-<section class="page-intro">
-  <h1>Dashboard</h1>
-  <p class="page-intro__subtitle">
-    You're signed in. Management pages will appear here in upcoming phases.
-  </p>
+<section class="page-intro page-intro--with-action">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="page-intro__subtitle">Manage your books and chapters.</p>
+  </div>
+  <a href="/admin/books/new" class="btn btn--primary">Add book</a>
 </section>
 
-<div class="dashboard-placeholder">
-  <p>Coming soon:</p>
-  <ul class="dashboard-placeholder__list">
-    <li>Add and edit books</li>
-    <li>Add, edit, schedule, and publish chapters</li>
-    <li>Upload cover images</li>
+<% if (books.length === 0) { %>
+  <div class="empty-state">
+    <p>No books yet.</p>
+    <p class="empty-state__hint">Create your first one with the “Add book” button.</p>
+  </div>
+<% } else { %>
+  <ul class="admin-book-list">
+    <% books.forEach(book => { %>
+      <li class="admin-book-list__item">
+        <div class="admin-book-list__cover">
+          <% if (book.cover_image) { %>
+            <img src="/uploads/<%= book.cover_image %>" alt="Cover of <%= book.title %>" />
+          <% } else { %>
+            <div class="admin-book-list__cover-placeholder" aria-hidden="true">
+              <span><%= book.title.charAt(0).toUpperCase() %></span>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="admin-book-list__body">
+          <h2 class="admin-book-list__title">
+            <a href="/books/<%= book.id %>"><%= book.title %></a>
+          </h2>
+          <p class="admin-book-list__meta">
+            <%= book.chapter_count %>
+            <%= book.chapter_count === 1 ? 'chapter' : 'chapters' %>
+            (incl. drafts)
+          </p>
+        </div>
+
+        <div class="admin-book-list__actions">
+          <a href="/admin/books/<%= book.id %>/edit" class="btn btn--ghost">Edit</a>
+          <a href="/admin/books/<%= book.id %>/delete" class="btn btn--ghost btn--danger">Delete</a>
+        </div>
+      </li>
+    <% }) %>
   </ul>
-</div>
+<% } %>
 
 <%- include('../partials/footer') %>

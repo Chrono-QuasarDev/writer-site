@@ -55,6 +55,12 @@ app.use(
 );
 
 // ------------------------------------
+// Flash messages (one-shot, session-backed)
+// ------------------------------------
+const flash = require('./middleware/flash');
+app.use(flash);
+
+// ------------------------------------
 // Make session data available to all views
 // ------------------------------------
 app.use((req, res, next) => {
