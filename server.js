@@ -8,6 +8,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ------------------------------------
+// Fail loudly in production if SESSION_SECRET is missing.
+// In development a fallback is fine; in production a known-weak
+// secret would let an attacker forge session cookies.
+// ------------------------------------
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.error(
+    '[Fatal] SESSION_SECRET must be set when NODE_ENV=production.'
+  );
+  process.exit(1);
+}
+
+// ------------------------------------
 // View engine setup
 // ------------------------------------
 app.set('view engine', 'ejs');
@@ -27,12 +39,16 @@ app.use(express.json());
 // Session configuration
 app.use(
   session({
+    name: 'connect.sid', // explicit default; keep stable for logout's clearCookie
     secret: process.env.SESSION_SECRET || 'fallback-secret-change-me',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,       // Set to true if using HTTPS in production
+      // Tie cookie-secure to NODE_ENV so dev (http) works and
+      // production (https) gets a Secure-flag cookie automatically.
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
+      sameSite: 'lax', // baseline CSRF defence for POSTs
       maxAge: 1000 * 60 * 60 * 24, // 24 hours
     },
   })
@@ -47,7 +63,7 @@ app.use((req, res, next) => {
 });
 
 // ------------------------------------
-// Routes (placeholders for now)
+// Routes
 // ------------------------------------
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');

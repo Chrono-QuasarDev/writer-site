@@ -1,12 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Login</title>
-  </head>
-  <body>
-    <h1>Admin Login</h1>
-    <p>Coming soon...</p>
-  </body>
-</html>
+<%- include('../partials/header') %>
+
+<section class="auth">
+  <div class="auth__card">
+    <h1 class="auth__title">Admin Login</h1>
+    <p class="auth__subtitle">Sign in to manage your books.</p>
+
+    <% if (error) { %>
+      <div class="auth__error" role="alert">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <form class="auth__form" method="POST" action="/admin/login" autocomplete="off">
+      <label class="auth__label" for="password">Password</label>
+      <input
+        class="auth__input"
+        type="password"
+        id="password"
+        name="password"
+        required
+        autofocus
+        autocomplete="current-password"
+      />
+      <button class="auth__submit" type="submit">Sign in</button>
+    </form>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>

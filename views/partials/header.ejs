@@ -17,6 +17,9 @@
         <a href="/">Library</a>
         <% if (isAdmin) { %>
           <a href="/admin/dashboard">Dashboard</a>
+          <form class="site-header__logout" method="POST" action="/admin/logout">
+            <button type="submit" class="site-header__logout-btn">Log out</button>
+          </form>
         <% } %>
       </nav>
     </div>
