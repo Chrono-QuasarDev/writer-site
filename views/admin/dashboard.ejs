@@ -33,13 +33,16 @@
             <a href="/books/<%= book.id %>"><%= book.title %></a>
           </h2>
           <p class="admin-book-list__meta">
-            <%= book.chapter_count %>
-            <%= book.chapter_count === 1 ? 'chapter' : 'chapters' %>
-            (incl. drafts)
+            <a href="/admin/books/<%= book.id %>/chapters" class="admin-book-list__chapter-link">
+              <%= book.chapter_count %>
+              <%= book.chapter_count === 1 ? 'chapter' : 'chapters' %>
+              (incl. drafts)
+            </a>
           </p>
         </div>
 
         <div class="admin-book-list__actions">
+          <a href="/admin/books/<%= book.id %>/chapters" class="btn btn--ghost">Chapters</a>
           <a href="/admin/books/<%= book.id %>/edit" class="btn btn--ghost">Edit</a>
           <a href="/admin/books/<%= book.id %>/delete" class="btn btn--ghost btn--danger">Delete</a>
         </div>

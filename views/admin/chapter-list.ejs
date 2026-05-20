@@ -1,0 +1,80 @@
+<%- include('../partials/header') %>
+<%- include('../partials/flash') %>
+
+<a href="/admin/dashboard" class="back-link">← Back to Dashboard</a>
+
+<section class="page-intro page-intro--with-action">
+  <div>
+    <h1>Chapters</h1>
+    <p class="page-intro__subtitle">
+      <a href="/books/<%= book.id %>" class="admin-book-list__chapter-link"><%= book.title %></a>
+    </p>
+  </div>
+  <a href="/admin/books/<%= book.id %>/chapters/new" class="btn btn--primary">Add chapter</a>
+</section>
+
+<% if (chapters.length === 0) { %>
+  <div class="empty-state">
+    <p>No chapters yet.</p>
+    <p class="empty-state__hint">Create your first one with the “Add chapter” button.</p>
+  </div>
+<% } else { %>
+  <ul class="admin-chapter-list">
+    <% chapters.forEach(chapter => {
+      // Compute status: Draft | Scheduled | Published
+      let status;
+      if (!chapter.is_published) {
+        status = 'draft';
+      } else if (chapter.publish_date && chapter.publish_date > today) {
+        status = 'scheduled';
+      } else {
+        status = 'published';
+      }
+    %>
+      <li class="admin-chapter-list__item">
+        <div class="admin-chapter-list__number">
+          Ch. <%= chapter.chapter_number %>
+        </div>
+
+        <div class="admin-chapter-list__body">
+          <h2 class="admin-chapter-list__title">
+            <% if (status === 'published') { %>
+              <a href="/chapters/<%= chapter.id %>"><%= chapter.title %></a>
+            <% } else { %>
+              <%= chapter.title %>
+            <% } %>
+          </h2>
+          <p class="admin-chapter-list__meta">
+            <span class="status status--<%= status %>">
+              <% if (status === 'draft') { %>Draft
+              <% } else if (status === 'scheduled') { %>Scheduled
+              <% } else { %>Published<% } %>
+            </span>
+            <% if (chapter.publish_date) { %>
+              <span class="admin-chapter-list__date">
+                <%= status === 'scheduled' ? 'on' : '·' %>
+                <%= chapter.publish_date %>
+              </span>
+            <% } %>
+          </p>
+        </div>
+
+        <div class="admin-chapter-list__actions">
+          <form
+            class="admin-chapter-list__toggle-form"
+            method="POST"
+            action="/admin/chapters/<%= chapter.id %>/publish-toggle"
+          >
+            <button type="submit" class="btn btn--ghost btn--small">
+              <%= chapter.is_published ? 'Unpublish' : 'Publish' %>
+            </button>
+          </form>
+          <a href="/admin/chapters/<%= chapter.id %>/edit" class="btn btn--ghost btn--small">Edit</a>
+          <a href="/admin/chapters/<%= chapter.id %>/delete" class="btn btn--ghost btn--small btn--danger">Delete</a>
+        </div>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>
+
+<%- include('../partials/footer') %>

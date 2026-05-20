@@ -6,6 +6,7 @@ const { requireAdmin, redirectIfAuth } = require('../middleware/auth');
 const { uploadCover } = require('../middleware/upload');
 const adminController = require('../controllers/adminController');
 const bookController = require('../controllers/bookController');
+const chapterController = require('../controllers/chapterController');
 
 // ---------------------------------------------------------------
 // Wrap multer so its errors (file too big, wrong type) don't
@@ -26,7 +27,6 @@ function handleUpload(req, res, next) {
     } else if (err.code === 'INVALID_FILE_TYPE') {
       req.fileError = err.message;
     } else {
-      // Unknown — let the global error handler deal with it.
       return next(err);
     }
     next();
@@ -58,9 +58,20 @@ router.post('/books/:id/edit', handleUpload, bookController.updateBook);
 router.get('/books/:id/delete', bookController.showDeleteBookForm);
 router.post('/books/:id/delete', bookController.deleteBook);
 
-// Placeholder for the next phase — chapter management
-router.get('/chapters/new', (req, res) => {
-  res.send('Add chapter form — coming soon');
-});
+// Chapter CRUD
+// List + create are nested under their book (you always create
+// a chapter FOR a specific book). Edit/delete/toggle use just
+// the chapter id since they already imply the book.
+router.get('/books/:bookId/chapters', chapterController.adminListChapters);
+router.get('/books/:bookId/chapters/new', chapterController.showNewChapterForm);
+router.post('/books/:bookId/chapters/new', chapterController.createChapter);
+
+router.get('/chapters/:id/edit', chapterController.showEditChapterForm);
+router.post('/chapters/:id/edit', chapterController.updateChapter);
+
+router.get('/chapters/:id/delete', chapterController.showDeleteChapterForm);
+router.post('/chapters/:id/delete', chapterController.deleteChapter);
+
+router.post('/chapters/:id/publish-toggle', chapterController.togglePublishChapter);
 
 module.exports = router;

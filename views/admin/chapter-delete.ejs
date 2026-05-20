@@ -1,0 +1,45 @@
+<%- include('../partials/header') %>
+<%- include('../partials/flash') %>
+
+<a href="/admin/books/<%= book.id %>/chapters" class="back-link">
+  ← Back to Chapters
+</a>
+
+<section class="form-page">
+  <h1 class="form-page__title">Delete this chapter?</h1>
+
+  <div class="confirm-card">
+    <div class="confirm-card__number">
+      Ch. <%= chapter.chapter_number %>
+    </div>
+    <div class="confirm-card__body">
+      <h2 class="confirm-card__title"><%= chapter.title %></h2>
+      <p class="confirm-card__meta">
+        in <em><%= book.title %></em>
+        <% if (chapter.is_published) { %>
+          · Currently published
+        <% } else { %>
+          · Currently a draft
+        <% } %>
+      </p>
+    </div>
+  </div>
+
+  <p class="form-page__warning">
+    <strong>This cannot be undone.</strong>
+    The chapter and all its content will be permanently removed.
+  </p>
+
+  <form
+    class="form-actions"
+    method="POST"
+    action="/admin/chapters/<%= chapter.id %>/delete"
+  >
+    <button type="submit" class="btn btn--primary btn--danger">
+      Yes, delete this chapter
+    </button>
+    <a href="/admin/books/<%= book.id %>/chapters" class="btn btn--ghost">Cancel</a>
+  </form>
+</section>
+
+<%- include('../partials/footer') %>

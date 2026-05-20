@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+<%- include('../partials/flash') %>
+
+<a href="/admin/books/<%= book.id %>/chapters" class="back-link">
+  ← Back to Chapters
+</a>
+
+<section class="form-page">
+  <h1 class="form-page__title">
+    <%= mode === 'edit' ? 'Edit Chapter' : 'Add Chapter' %>
+  </h1>
+  <p class="form-page__subtitle">in <em><%= book.title %></em></p>
+
+  <% if (errors && errors.length) { %>
+    <div class="form-errors" role="alert">
+      <p class="form-errors__heading">Please fix the following:</p>
+      <ul>
+        <% errors.forEach(err => { %><li><%= err %></li><% }) %>
+      </ul>
+    </div>
+  <% } %>
+
+  <form
+    class="book-form"
+    method="POST"
+    action="<%= mode === 'edit'
+      ? '/admin/chapters/' + chapter.id + '/edit'
+      : '/admin/books/' + book.id + '/chapters/new' %>"
+  >
+    <div class="form-field">
+      <label class="form-field__label" for="title">Title</label>
+      <input
+        class="form-field__input"
+        type="text"
+        id="title"
+        name="title"
+        maxlength="200"
+        required
+        value="<%= chapter.title || '' %>"
+      />
+    </div>
+
+    <div class="form-row">
+      <div class="form-field form-field--narrow">
+        <label class="form-field__label" for="chapter_number">Chapter number</label>
+        <input
+          class="form-field__input"
+          type="number"
+          id="chapter_number"
+          name="chapter_number"
+          min="1"
+          step="1"
+          required
+          value="<%= chapter.chapter_number || '' %>"
+        />
+      </div>
+
+      <div class="form-field form-field--narrow">
+        <label class="form-field__label" for="publish_date">Publish date</label>
+        <input
+          class="form-field__input"
+          type="date"
+          id="publish_date"
+          name="publish_date"
+          value="<%= chapter.publish_date || '' %>"
+        />
+        <p class="form-field__hint">Optional. Future dates schedule the chapter.</p>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label class="form-field__checkbox-row" for="is_published">
+        <input
+          type="checkbox"
+          id="is_published"
+          name="is_published"
+          value="1"
+          <%= chapter.is_published ? 'checked' : '' %>
+        />
+        <span>Published</span>
+      </label>
+      <p class="form-field__hint">
+        Unchecked = draft (invisible to readers).
+        Checked + future date = scheduled (will appear on the publish date).
+      </p>
+    </div>
+
+    <div class="form-field">
+      <label class="form-field__label" for="content">Content</label>
+      <textarea
+        class="form-field__input form-field__input--textarea form-field__input--tall"
+        id="content"
+        name="content"
+        rows="20"
+        maxlength="200000"
+      ><%= chapter.content || '' %></textarea>
+      <p class="form-field__hint">
+        Plain text. Separate paragraphs with a blank line.
+        Up to 200,000 characters.
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">
+        <%= mode === 'edit' ? 'Save changes' : 'Create chapter' %>
+      </button>
+      <a href="/admin/books/<%= book.id %>/chapters" class="btn btn--ghost">Cancel</a>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/footer') %>
