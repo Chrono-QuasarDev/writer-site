@@ -1,12 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Book Library</title>
-  </head>
-  <body>
-    <h1>Book Library</h1>
-    <p>Coming soon...</p>
-  </body>
-</html>
+<%- include('partials/header') %>
+
+<section class="page-intro">
+  <h1>Library</h1>
+  <p class="page-intro__subtitle">A collection of ongoing and completed works.</p>
+</section>
+
+<% if (books.length === 0) { %>
+  <div class="empty-state">
+    <p>No books published yet.</p>
+    <p class="empty-state__hint">Check back soon.</p>
+  </div>
+<% } else { %>
+  <ul class="book-grid">
+    <% books.forEach(book => { %>
+      <li>
+        <a href="/books/<%= book.id %>" class="book-card">
+          <div class="book-card__cover">
+            <% if (book.cover_image) { %>
+              <img
+                src="/uploads/<%= book.cover_image %>"
+                alt="Cover of <%= book.title %>"
+                loading="lazy"
+              />
+            <% } else { %>
+              <div class="book-card__cover-placeholder" aria-hidden="true">
+                <span><%= book.title.charAt(0).toUpperCase() %></span>
+              </div>
+            <% } %>
+          </div>
+          <div class="book-card__body">
+            <h2 class="book-card__title"><%= book.title %></h2>
+            <p class="book-card__meta">
+              <%= book.chapter_count %>
+              <%= book.chapter_count === 1 ? 'chapter' : 'chapters' %>
+            </p>
+          </div>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>
+
+<%- include('partials/footer') %>

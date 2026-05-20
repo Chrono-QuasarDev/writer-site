@@ -1,13 +1,271 @@
-/* Global styles — to be expanded */
+/* ============================================
+   Design tokens
+   ============================================ */
+:root {
+  --color-bg: #fafaf7;
+  --color-surface: #ffffff;
+  --color-text: #1f1f1f;
+  --color-text-muted: #6b6b6b;
+  --color-border: #e5e5e0;
+  --color-accent: #8b3a2f;
+  --color-accent-hover: #6f2d24;
+
+  --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  --transition: 180ms ease;
+
+  --container-max: 1100px;
+}
+
+/* ============================================
+   Reset
+   ============================================ */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+ul { list-style: none; }
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+a:hover { color: var(--color-accent-hover); }
+
+/* ============================================
+   Base
+   ============================================ */
+html { font-size: 16px; }
+
 body {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
   line-height: 1.6;
-  color: #333;
-  background-color: #fafafa;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.375rem; }
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+.site-main {
+  flex: 1;
+  padding: var(--space-xl) var(--space-md);
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+.site-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-md) 0;
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.site-header__brand {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.site-header__brand:hover { color: var(--color-accent); }
+
+.site-header__nav {
+  display: flex;
+  gap: var(--space-lg);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+.site-footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-lg) 0;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* ============================================
+   Page intro
+   ============================================ */
+.page-intro {
+  margin-bottom: var(--space-xl);
+}
+
+.page-intro__subtitle {
+  color: var(--color-text-muted);
+  font-size: 1.0625rem;
+  margin-top: var(--space-xs);
+}
+
+/* ============================================
+   Empty state
+   ============================================ */
+.empty-state {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-md);
+  color: var(--color-text-muted);
+}
+
+.empty-state p { font-size: 1.125rem; }
+
+.empty-state__hint {
+  font-size: 0.95rem;
+  margin-top: var(--space-xs);
+  font-style: italic;
+}
+
+/* ============================================
+   Book grid — mobile-first
+   ============================================ */
+.book-grid {
+  display: grid;
+  grid-template-columns: 1fr;        /* 1 col on mobile */
+  gap: var(--space-lg);
+}
+
+@media (min-width: 600px) {
+  .book-grid {
+    grid-template-columns: repeat(2, 1fr);  /* 2 cols on tablet */
+  }
+}
+
+@media (min-width: 900px) {
+  .book-grid {
+    grid-template-columns: repeat(3, 1fr);  /* 3 cols on desktop */
+    gap: var(--space-xl);
+  }
+}
+
+/* ============================================
+   Book card
+   ============================================ */
+.book-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  color: var(--color-text);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition),
+              box-shadow var(--transition),
+              border-color var(--transition);
+  height: 100%;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.book-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.book-card__cover {
+  aspect-ratio: 2 / 3;
+  background: #ece9e2;
+  overflow: hidden;
+}
+
+.book-card__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 300ms ease;
+}
+
+.book-card:hover .book-card__cover img {
+  transform: scale(1.03);
+}
+
+.book-card__cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #d4cfc3 0%, #b8b0a0 100%);
+  color: var(--color-surface);
+  font-family: var(--font-serif);
+}
+
+.book-card__cover-placeholder span {
+  font-size: 4rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.book-card__body {
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+}
+
+.book-card__title {
+  font-size: 1.25rem;
+  margin-bottom: var(--space-xs);
+}
+
+.book-card__meta {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
 }
