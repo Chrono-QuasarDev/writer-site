@@ -1,0 +1,649 @@
+From ca0280a234c2c689228870f0b617d4f7cc681701 Mon Sep 17 00:00:00 2001
+From: a <a@a>
+Date: Wed, 20 May 2026 18:37:25 +0000
+Subject: [PATCH] phase6: prep for Railway deployment
+
+---
+ .env.example         |  36 +++++--
+ .nvmrc               |   1 +
+ DEPLOY.md            | 229 +++++++++++++++++++++++++++++++++++++++++++
+ README.md            |  71 ++++++++++++++
+ config/database.js   |  14 ++-
+ middleware/upload.js |  14 ++-
+ package.json         |   7 +-
+ railway.json         |  13 +++
+ server.js            | 109 +++++++++++++++-----
+ 9 files changed, 456 insertions(+), 38 deletions(-)
+ create mode 100644 .nvmrc
+ create mode 100644 DEPLOY.md
+ create mode 100644 README.md
+ create mode 100644 railway.json
+
+diff --git a/.env.example b/.env.example
+index 9aa2b86..622b281 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1,15 +1,39 @@
+ # Copy this file to .env and fill in your values
+ # cp .env.example .env
+ 
+-# Password used to log in to the admin panel
++# ------------------------------------------------------------
++# Required
++# ------------------------------------------------------------
++
++# Password used to log in to the admin panel.
++# Required in production (the server refuses to start without it).
+ ADMIN_PASSWORD=your-strong-password-here
+ 
+-# Random string used to sign session cookies
+-# Generate one with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
++# Random string used to sign session cookies.
++# Required in production. Generate one with:
++#   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+ SESSION_SECRET=your-random-session-secret-here
+ 
+-# Optional: set to 'production' when deploying
++# ------------------------------------------------------------
++# Optional
++# ------------------------------------------------------------
++
++# 'development' or 'production'. In production:
++#  - secure cookies are enabled (requires HTTPS)
++#  - trust proxy is set (req.ip honours X-Forwarded-For)
++#  - required env vars above are enforced
+ NODE_ENV=development
+ 
+-# Optional: override default port (3000)
+-PORT=3000
+\ No newline at end of file
++# HTTP port (default 3000). Most hosts set this for you.
++PORT=3000
++
++# Where to keep database.db. Defaults to <project>/database.db
++# in development. In production, point this at a persistent
++# volume so deploys don't wipe your data:
++#   DATABASE_PATH=/data/database.db
++# DATABASE_PATH=
++
++# Where to keep uploaded cover images. Defaults to
++# <project>/public/uploads in development. In production:
++#   UPLOADS_DIR=/data/uploads
++# UPLOADS_DIR=
+diff --git a/.nvmrc b/.nvmrc
+new file mode 100644
+index 0000000..209e3ef
+--- /dev/null
++++ b/.nvmrc
+@@ -0,0 +1 @@
++20
+diff --git a/DEPLOY.md b/DEPLOY.md
+new file mode 100644
+index 0000000..7334a3b
+--- /dev/null
++++ b/DEPLOY.md
+@@ -0,0 +1,229 @@
++# Deploying Writer Site to Railway
++
++A complete walk-through from "I have a working local dev environment" to
++"the site is live on the public internet."
++
++---
++
++## Why Railway?
++
++Railway runs Node apps cheaply, gives you a persistent volume for SQLite
+++ uploads, includes free HTTPS, and only takes ~10 minutes to set up.
++Free credit ($5/month) generally covers a low-traffic personal site.
++
++If you'd rather use **Render**, **Fly.io**, or a **VPS**, the same
++project works there — only the platform-specific steps differ. The
++production-readiness code changes (env vars, trust proxy, `/healthz`,
++volume-aware paths) are platform-agnostic.
++
++---
++
++## Prerequisites
++
++- The project is checked into a GitHub repo you control.
++- You've committed all your local changes (`git status` is clean).
++- Local dev still works (`npm run dev` → visit `/admin/login`).
++
++---
++
++## Step 1 — Create a Railway account
++
++1. Go to <https://railway.app>
++2. Click **Login** → **Login with GitHub**
++3. Authorise Railway to read your repos.
++
++That's it for signup. Free tier gives you $5 of credit per month.
++
++---
++
++## Step 2 — Create the project
++
++1. From the Railway dashboard, click **New Project**
++2. Choose **Deploy from GitHub repo**
++3. Pick your `writer-site` repo
++4. Railway will auto-detect Node + start a first build.
++
++The first build will **probably fail** because env vars and the volume
++aren't set up yet. That's expected — we'll fix it in the next two steps.
++
++---
++
++## Step 3 — Add the persistent volume
++
++Without this, every redeploy wipes your database and uploaded covers.
++
++1. In your Railway project, click on your service (the box representing
++   the app)
++2. Go to the **Settings** tab → scroll to **Volumes**
++3. Click **+ New Volume**
++4. **Mount path:** `/data`
++5. **Size:** 1 GB (the smallest option) is plenty for a personal site
++6. Click **Add**
++
++Railway will provision the volume and trigger a redeploy.
++
++---
++
++## Step 4 — Set environment variables
++
++In your service, go to **Variables** tab and add the following:
++
++| Variable | Value | Notes |
++|---|---|---|
++| `NODE_ENV` | `production` | Enables secure cookies, trust proxy, env validation |
++| `ADMIN_PASSWORD` | (a strong unique password — different from your dev one!) | Used for the admin login |
++| `SESSION_SECRET` | (32+ random hex chars; see below) | Signs session cookies |
++| `DATABASE_PATH` | `/data/database.db` | Lives on the volume |
++| `UPLOADS_DIR` | `/data/uploads` | Lives on the volume |
++
++To generate a strong `SESSION_SECRET`, run locally:
++
++```bash
++node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
++```
++
++To generate a strong `ADMIN_PASSWORD`, you can use a password manager
++or:
++
++```bash
++node -e "console.log(require('crypto').randomBytes(18).toString('base64url'))"
++```
++
++**Store both somewhere safe — you'll need `ADMIN_PASSWORD` to log in.**
++
++After saving the variables, Railway will redeploy automatically.
++
++---
++
++## Step 5 — Watch the deploy
++
++In your service, the **Deployments** tab shows logs in real time.
++A successful deploy looks like this:
++
++```
++[Setup] Creating tables...
++  ✓ books
++  ✓ chapters
++  ✓ admin
++[Setup] Creating indexes...
++  ✓ indexes ready
++[Setup] Created admin user "admin".
++[Setup] Skipping seed data (pass --seed to include it).
++
++[Setup] ✅ Database is ready.
++
++Server running at http://localhost:8080
++Environment: production
++[Database] Connected to SQLite at /data/database.db
++```
++
++The startup runs `npm run deploy:setup && npm start` (configured in
++`railway.json`). The setup script is idempotent — it skips tables and
++the admin user on subsequent boots.
++
++---
++
++## Step 6 — Visit the site
++
++1. In your service, **Settings** → **Networking** → **Generate Domain**
++2. Railway creates a `*.up.railway.app` URL.
++3. Click it. You should see the homepage with the "No books published
++   yet" empty state (we didn't seed in production — see optional step
++   below if you want sample data).
++4. Visit `/admin/login` and use the `ADMIN_PASSWORD` you set.
++5. Try creating a book with a cover image. Verify the cover survives
++   a redeploy: change a file locally, `git push`, wait for redeploy,
++   reload the book page — the cover should still be there. That's
++   your volume working.
++
++---
++
++## Optional — Seed sample data in production
++
++Skip this if you want to add real books through the admin UI from the
++start. If you want the demo books seeded:
++
++1. Railway service → **Settings** → **Deploy** → temporarily change
++   start command to:
++   ```
++   node setup-database.js --seed && npm start
++   ```
++2. Trigger a redeploy
++3. Once it's up, change the start command back to:
++   ```
++   npm run deploy:setup && npm start
++   ```
++4. Seed-script is also idempotent — it skips seeding if any books exist.
++
++---
++
++## Optional — Custom domain
++
++Once you're happy with the deployment on the Railway subdomain:
++
++1. Service → **Settings** → **Networking** → **+ Custom Domain**
++2. Enter your domain (e.g. `writing.example.com`)
++3. Add the CNAME record Railway gives you at your DNS provider
++4. Wait a few minutes — HTTPS is provisioned automatically
++
++---
++
++## Routine operations
++
++### Updating the code
++Push to your repo's main branch. Railway auto-deploys.
++
++### Changing the admin password
++Update `ADMIN_PASSWORD` in Railway env vars. Then **either**:
++- Delete the admin row in the DB and restart (the setup script will
++  recreate it with the new password), **or**
++- Leave the old row — the new password won't take effect until you
++  remove the row, because `setup-database.js` only creates the admin
++  user if one doesn't already exist.
++
++A future polish phase could add a proper admin "change password" tool.
++
++### Backing up your data
++Railway volumes are durable but not backed up automatically. Periodic
++manual backup:
++
++```bash
++# From your local machine, with the railway CLI installed
++railway ssh
++cat /data/database.db > /tmp/db.snapshot   # then download via scp / git
++```
++
++Or accept the risk for a personal site. Up to you.
++
++### Reading logs
++Service → **Deployments** → click the latest → **Logs** tab.
++
++---
++
++## Troubleshooting
++
++### "Application failed to respond"
++Check the deploy logs. Most common causes:
++- Missing required env var (the app exits with a clear `[Fatal]` line)
++- Volume not mounted at `/data` (uploads middleware will throw on first
++  upload attempt)
++- Port mismatch — your code reads `process.env.PORT`; Railway sets it
++  automatically. Don't hardcode 3000.
++
++### "504 timeout" on first request
++Cold start. Railway spins services down after inactivity on the free
++tier. First request wakes it; subsequent requests are fast.
++
++### Sessions don't persist
++Make sure `SESSION_SECRET` is set in env vars (not just `.env`, which
++isn't deployed). Without it in production, the app will refuse to start
++(by design).
++
++### Cover images 404 after deploy
++The volume isn't mounted. Re-check Step 3. The path on the volume side
++must be exactly `/data`, and `UPLOADS_DIR` must be set to
++`/data/uploads`.
++
++### Free credit ran out
++You'll get an email. Either add a credit card to upgrade, or the
++service pauses until the next month. Data on the volume is preserved.
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..d84d8a6
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,71 @@
++# Writer Site
++
++A personal book publishing site for writers. Browse books, read
++chapters, and manage everything through a password-protected admin
++panel.
++
++## Tech stack
++
++- **Node.js** + **Express** — backend
++- **EJS** — server-side templates
++- **SQLite** — database (single file, zero config)
++- **sharp** + **multer** — cover image upload & processing
++- **bcrypt** + **express-session** — admin authentication
++- No client-side framework — server-rendered HTML, minimal JS
++
++## Local development
++
++```bash
++# Install dependencies
++npm install
++
++# Copy env template and fill in values
++cp .env.example .env
++# Edit .env: set ADMIN_PASSWORD and SESSION_SECRET (any non-empty
++# values are fine for dev)
++
++# Initialise the database (creates tables, hashes admin password)
++npm run setup
++
++# Optionally seed two sample books with three chapters each
++npm run setup:seed
++
++# Start the dev server with auto-reload
++npm run dev
++```
++
++Visit:
++- <http://localhost:3000/> — public site (book library)
++- <http://localhost:3000/admin/login> — admin panel
++
++## Deployment
++
++See [DEPLOY.md](./DEPLOY.md) for a step-by-step Railway deployment
++walk-through. The same architecture works on Render, Fly.io, or any
++VPS that runs Node.
++
++## Project structure
++
++```
++config/        SQLite connection
++controllers/   Route handlers (book, chapter, admin)
++middleware/    Auth, file upload, flash messages
++public/        Static assets + uploaded covers (dev only)
++routes/        Express route definitions
++views/         EJS templates
++  admin/         Admin UI
++  partials/      Shared header/footer/flash
++patches/       Per-phase git patches (development history)
++setup-database.js  Idempotent DB initialisation
++server.js          Application entry point
++```
++
++## Scripts
++
++| Command | What it does |
++|---|---|
++| `npm run dev` | Start dev server with nodemon auto-reload |
++| `npm start` | Start production server |
++| `npm run setup` | Create tables + admin user (idempotent) |
++| `npm run setup:seed` | Same as setup + adds sample books |
++| `npm run deploy:setup` | Alias for `setup`, used by Railway start command |
+diff --git a/config/database.js b/config/database.js
+index ca3bf87..80c70b5 100644
+--- a/config/database.js
++++ b/config/database.js
+@@ -1,8 +1,16 @@
+ const sqlite3 = require('sqlite3').verbose();
+ const path = require('path');
+ 
+-// Database file sits in the project root
+-const DB_PATH = path.join(__dirname, '..', 'database.db');
++// Database file path.
++// - In development (default): <project root>/database.db
++// - In production: set DATABASE_PATH env var to a writable persistent
++//   location (e.g. /data/database.db on Railway with a mounted Volume).
++//
++// Pointing it anywhere on an ephemeral disk in production will silently
++// lose data on every redeploy, so the env var is the supported escape
++// hatch rather than a guess based on NODE_ENV.
++const DB_PATH = process.env.DATABASE_PATH
++  || path.join(__dirname, '..', 'database.db');
+ 
+ // Create a single shared connection for the whole app
+ const db = new sqlite3.Database(DB_PATH, (err) => {
+@@ -57,4 +65,4 @@ db.allAsync = function (sql, params = []) {
+   });
+ };
+ 
+-module.exports = db;
+\ No newline at end of file
++module.exports = db;
+diff --git a/middleware/upload.js b/middleware/upload.js
+index de3e46b..4708f85 100644
+--- a/middleware/upload.js
++++ b/middleware/upload.js
+@@ -15,11 +15,20 @@
+  *   2) No path-traversal risk from user-controlled names.
+  *   3) Doesn't leak the user's original filename.
+  *
++ * Storage location:
++ *   - Development (default): <project>/public/uploads
++ *   - Production: set UPLOADS_DIR env var to a persistent path
++ *     (e.g. /data/uploads on Railway with a mounted Volume).
++ *     server.js maps the URL /uploads/* to whichever directory
++ *     this resolves to, so the public URL stays /uploads/<name>
++ *     regardless of disk layout.
++ *
+  * Exported:
+  *   - uploadCover:     multer middleware (parses one `cover` field)
+  *   - processCover:    async function that takes req.file and writes
+- *                      a WebP to public/uploads/, returns the filename.
++ *                      a WebP to UPLOADS_DIR, returns the filename.
+  *   - deleteCover:     async helper to remove an old file by filename.
++ *   - UPLOADS_DIR:     resolved absolute path (so server.js can mount it)
+  */
+ 
+ const path = require('path');
+@@ -28,7 +37,8 @@ const crypto = require('crypto');
+ const multer = require('multer');
+ const sharp = require('sharp');
+ 
+-const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
++const UPLOADS_DIR = process.env.UPLOADS_DIR
++  || path.join(__dirname, '..', 'public', 'uploads');
+ const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
+ 
+ // Reject by both MIME type and (later) by sharp's own probing.
+diff --git a/package.json b/package.json
+index acd1117..408eebd 100644
+--- a/package.json
++++ b/package.json
+@@ -7,10 +7,12 @@
+     "start": "node server.js",
+     "dev": "nodemon server.js",
+     "setup": "node setup-database.js",
+-    "setup:seed": "node setup-database.js --seed"
++    "setup:seed": "node setup-database.js --seed",
++    "deploy:setup": "node setup-database.js"
+   },
+   "dependencies": {
+     "bcrypt": "^5.1.1",
++    "connect-sqlite3": "^0.9.16",
+     "dotenv": "^16.4.5",
+     "ejs": "^3.1.10",
+     "express": "^4.19.2",
+@@ -21,5 +23,8 @@
+   },
+   "devDependencies": {
+     "nodemon": "^3.1.4"
++  },
++  "engines": {
++    "node": ">=20.0.0"
+   }
+ }
+diff --git a/railway.json b/railway.json
+new file mode 100644
+index 0000000..c6cd03f
+--- /dev/null
++++ b/railway.json
+@@ -0,0 +1,13 @@
++{
++  "$schema": "https://railway.com/railway.schema.json",
++  "build": {
++    "builder": "NIXPACKS"
++  },
++  "deploy": {
++    "startCommand": "npm run deploy:setup && npm start",
++    "healthcheckPath": "/healthz",
++    "healthcheckTimeout": 100,
++    "restartPolicyType": "ON_FAILURE",
++    "restartPolicyMaxRetries": 10
++  }
++}
+diff --git a/server.js b/server.js
+index fce8cc1..fb8555d 100644
+--- a/server.js
++++ b/server.js
+@@ -6,17 +6,34 @@ const path = require('path');
+ 
+ const app = express();
+ const PORT = process.env.PORT || 3000;
++const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+ 
+ // ------------------------------------
+-// Fail loudly in production if SESSION_SECRET is missing.
+-// In development a fallback is fine; in production a known-weak
+-// secret would let an attacker forge session cookies.
++// Fail loudly in production if required secrets are missing.
++// In development, fallbacks are fine; in production, a known-weak
++// secret or missing admin password would be a serious problem.
++// ------------------------------------
++if (IS_PRODUCTION) {
++  const missing = [];
++  if (!process.env.SESSION_SECRET) missing.push('SESSION_SECRET');
++  if (!process.env.ADMIN_PASSWORD) missing.push('ADMIN_PASSWORD');
++  if (missing.length) {
++    console.error(
++      `[Fatal] These env vars are required in production: ${missing.join(', ')}`
++    );
++    process.exit(1);
++  }
++}
++
++// ------------------------------------
++// Trust the platform's reverse proxy in production so req.ip
++// reflects the real client (needed for the login rate limiter).
++// "1" = trust the first hop, which is what Railway / Fly / Heroku
++// / Render all sit at. Don't blindly trust X-Forwarded-For from
++// arbitrary depths — that lets clients spoof their IP.
+ // ------------------------------------
+-if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+-  console.error(
+-    '[Fatal] SESSION_SECRET must be set when NODE_ENV=production.'
+-  );
+-  process.exit(1);
++if (IS_PRODUCTION) {
++  app.set('trust proxy', 1);
+ }
+ 
+ // ------------------------------------
+@@ -29,30 +46,62 @@ app.set('views', path.join(__dirname, 'views'));
+ // Middleware
+ // ------------------------------------
+ 
+-// Serve static files from /public
++// Static assets from /public (CSS, JS).
+ app.use(express.static(path.join(__dirname, 'public')));
+ 
++// User-uploaded covers. In production these live on a persistent
++// volume outside the project tree (UPLOADS_DIR env var). The public
++// URL stays /uploads/<filename> in both environments so templates
++// don't need to know about it.
++const { UPLOADS_DIR } = require('./middleware/upload');
++app.use('/uploads', express.static(UPLOADS_DIR));
++
+ // Parse incoming form data
+ app.use(express.urlencoded({ extended: true }));
+ app.use(express.json());
+ 
+-// Session configuration
+-app.use(
+-  session({
+-    name: 'connect.sid', // explicit default; keep stable for logout's clearCookie
+-    secret: process.env.SESSION_SECRET || 'fallback-secret-change-me',
+-    resave: false,
+-    saveUninitialized: false,
+-    cookie: {
+-      // Tie cookie-secure to NODE_ENV so dev (http) works and
+-      // production (https) gets a Secure-flag cookie automatically.
+-      secure: process.env.NODE_ENV === 'production',
+-      httpOnly: true,
+-      sameSite: 'lax', // baseline CSRF defence for POSTs
+-      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+-    },
+-  })
+-);
++// ------------------------------------
++// Session store
++// ------------------------------------
++// In development: default in-memory store (sessions lost on restart, fine).
++// In production: SQLite-backed store so sessions survive redeploys.
++//
++// The session DB lives next to the main app DB by default. On Railway
++// with a persistent volume mounted at /data, point both at /data:
++//   DATABASE_PATH=/data/database.db
++//   SESSIONS_DIR=/data
++// (SESSIONS_DIR defaults to the directory containing DATABASE_PATH,
++//  falling back to the project root in dev.)
++const sessionConfig = {
++  name: 'connect.sid', // explicit default; keep stable for logout's clearCookie
++  secret: process.env.SESSION_SECRET || 'fallback-secret-change-me',
++  resave: false,
++  saveUninitialized: false,
++  cookie: {
++    // Tie cookie-secure to NODE_ENV so dev (http) works and
++    // production (https) gets a Secure-flag cookie automatically.
++    secure: IS_PRODUCTION,
++    httpOnly: true,
++    sameSite: 'lax', // baseline CSRF defence for POSTs
++    maxAge: 1000 * 60 * 60 * 24, // 24 hours
++  },
++};
++
++if (IS_PRODUCTION) {
++  const SQLiteStore = require('connect-sqlite3')(session);
++  // Default sessions.db location: same dir as DATABASE_PATH, or project root
++  const sessionsDir = process.env.SESSIONS_DIR
++    || (process.env.DATABASE_PATH ? path.dirname(process.env.DATABASE_PATH) : __dirname);
++  sessionConfig.store = new SQLiteStore({
++    db: 'sessions.db',
++    dir: sessionsDir,
++    // Periodically purge expired sessions (1h interval)
++    concurrentDB: true,
++  });
++  console.log(`[Session] SQLite store at ${path.join(sessionsDir, 'sessions.db')}`);
++}
++
++app.use(session(sessionConfig));
+ 
+ // ------------------------------------
+ // Flash messages (one-shot, session-backed)
+@@ -68,6 +117,14 @@ app.use((req, res, next) => {
+   next();
+ });
+ 
++// ------------------------------------
++// Health check — Railway (and most platforms) ping this to
++// verify the service is alive. Cheap, no DB hit, no session.
++// ------------------------------------
++app.get('/healthz', (req, res) => {
++  res.status(200).type('text/plain').send('ok');
++});
++
+ // ------------------------------------
+ // Routes
+ // ------------------------------------
+-- 
+2.47.3
+

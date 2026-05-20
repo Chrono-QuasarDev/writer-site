@@ -1,8 +1,16 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// Database file sits in the project root
-const DB_PATH = path.join(__dirname, '..', 'database.db');
+// Database file path.
+// - In development (default): <project root>/database.db
+// - In production: set DATABASE_PATH env var to a writable persistent
+//   location (e.g. /data/database.db on Railway with a mounted Volume).
+//
+// Pointing it anywhere on an ephemeral disk in production will silently
+// lose data on every redeploy, so the env var is the supported escape
+// hatch rather than a guess based on NODE_ENV.
+const DB_PATH = process.env.DATABASE_PATH
+  || path.join(__dirname, '..', 'database.db');
 
 // Create a single shared connection for the whole app
 const db = new sqlite3.Database(DB_PATH, (err) => {

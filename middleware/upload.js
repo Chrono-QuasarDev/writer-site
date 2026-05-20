@@ -15,11 +15,20 @@
  *   2) No path-traversal risk from user-controlled names.
  *   3) Doesn't leak the user's original filename.
  *
+ * Storage location:
+ *   - Development (default): <project>/public/uploads
+ *   - Production: set UPLOADS_DIR env var to a persistent path
+ *     (e.g. /data/uploads on Railway with a mounted Volume).
+ *     server.js maps the URL /uploads/* to whichever directory
+ *     this resolves to, so the public URL stays /uploads/<name>
+ *     regardless of disk layout.
+ *
  * Exported:
  *   - uploadCover:     multer middleware (parses one `cover` field)
  *   - processCover:    async function that takes req.file and writes
- *                      a WebP to public/uploads/, returns the filename.
+ *                      a WebP to UPLOADS_DIR, returns the filename.
  *   - deleteCover:     async helper to remove an old file by filename.
+ *   - UPLOADS_DIR:     resolved absolute path (so server.js can mount it)
  */
 
 const path = require('path');
@@ -28,7 +37,8 @@ const crypto = require('crypto');
 const multer = require('multer');
 const sharp = require('sharp');
 
-const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
+const UPLOADS_DIR = process.env.UPLOADS_DIR
+  || path.join(__dirname, '..', 'public', 'uploads');
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 
 // Reject by both MIME type and (later) by sharp's own probing.
